@@ -5,3 +5,6 @@
 [1031/124519.132:ERROR:process_info.cc(359)] UncheckedAllocate
 [1031/124519.133:ERROR:process_info.cc(359)] UncheckedAllocate
 [1031/125515.607:ERROR:directory_reader_win.cc(43)] FindFirstFile: The system cannot find the path specified. (0x3)
+[1031/164941.413:ERROR:process_info.cc(359)] UncheckedAllocate
+[1031/164945.654:ERROR:process_info.cc(359)] UncheckedAllocate
+[1031/164950.101:ERROR:process_info.cc(359)] UncheckedAllocate

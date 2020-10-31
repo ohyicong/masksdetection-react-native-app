@@ -19,8 +19,8 @@ export default function App() {
         const tfReady = await tf.ready();
         console.log("[+] Loading custom mask detection model")
         //Replce model.json and group1-shard.bin with your own custom model
-        const modelJson = await require("./assets/models/model.json");
-        const modelWeight = await require("./assets/models/group1-shard.bin");
+        const modelJson = await require("./assets/model/model.json");
+        const modelWeight = await require("./assets/model/group1-shard.bin");
         const maskDetector = await tf.loadLayersModel(bundleResourceIO(modelJson,modelWeight));
         console.log("[+] Loading pre-trained face detection model")
         //Blazeface is a face detection model provided by Google

@@ -28,6 +28,7 @@ export default function App() {
         //Assign model to variable
         setMaskDetector(maskDetector)
         setFaceDetector(faceDetector)
+        console.log("[+] Model Loaded")
       }
       loadModel()
     }, []); 

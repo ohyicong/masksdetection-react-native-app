@@ -10,6 +10,7 @@
   "dependencies": {
     "@react-native-community/async-storage": "^1.12.1",
     "@tensorflow-models/blazeface": "0.0.5",
+    "@tensorflow-models/knn-classifier": "^1.2.2",
     "@tensorflow-models/mobilenet": "^2.0.4",
     "@tensorflow/tfjs": "^2.6.0",
     "@tensorflow/tfjs-react-native": "^0.4.0",
@@ -17,6 +18,7 @@
     "expo-camera": "^9.0.0",
     "expo-gl": "~9.1.1",
     "expo-gl-cpp": "~9.1.2",
+    "expo-image-manipulator": "^8.3.0",
     "expo-status-bar": "~1.0.2",
     "jpeg-js": "^0.4.2",
     "react": "16.13.1",

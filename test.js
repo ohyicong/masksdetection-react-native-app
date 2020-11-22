@@ -16,6 +16,7 @@ export default function App() {
   const [isTfReady,setIsTfReady] = useState(false)
   const [mobilenetModel,setMobilenetModel] = useState(null)
   const [knnClassifierModel,setKnnClassifierModel] = useState(null)
+  const [dnnClassifierModel,setDnnClassifierModel] = useState(null)
   const [prediction,setPrediction] = useState({
     "label":"No Results",
     "confidence":{}
@@ -28,21 +29,6 @@ export default function App() {
     "Class B":0,
     "Class C":0
   })
-  const classList=[
-    {
-      id:0,
-      name:"Class A"
-    },
-    {
-      id:1,
-      name:"Class B"
-    },
-    {
-      id:2,
-      name:"Class C"
-    },
-  ]
-  //load tensorflow 
   useEffect(() => {
     async function startup (){
       if(!isTfReady){
@@ -55,6 +41,7 @@ export default function App() {
         setIsTfReady(true)
         setMobilenetModel(await mobilenet.load())
         setKnnClassifierModel(await knnClassifier.create())
+        setDnnClassifierModel(createDnnClassifierModel())
         setIsLoading(false)
         console.log("[+] TF Model Loaded")
       }
@@ -62,22 +49,43 @@ export default function App() {
     startup()
   },[isTfReady]);
 
-  //1. collect and label images from camera
+  const getPredictions = async() =>{
+    if(this.camera){
+      console.log("[+] Analysing Photo")
+      setStatus(statusList[2])
+      setIsLoading(true)
+      let photo = await this.camera.takePictureAsync({
+        skipProcessing: true,
+      });
+      image = await resizeImage(photo.uri, 224 , 224);
+      let imageTensor = base64ImageToTensor(image.base64);
+      let activation = await mobilenetModel.infer(imageTensor,true)
+      //console.log("[+] Activation Shape", activation.shape)
+      let prediction = await knnClassifierModel.predictClass(activation);
+      console.log(JSON.stringify(prediction))
+      setPrediction(prediction)
+      setIsLoading(false)
+      console.log("[+] Photo Analysed")
+    }
+  }
+
   const collectData = async(className)=>{
-    console.log(`[+] Class ${className} selected`)
+    console.log(`[+] ${className} selected`)
     setStatus(statusList[1])
     setIsLoading(true)
     if(this.camera){
       let photo = await this.camera.takePictureAsync({
         skipProcessing: true,
       });
-      //2. resize images into width:224 height:224
       image = await resizeImage(photo.uri, 224 , 224);
       let imageTensor = base64ImageToTensor(image.base64);
-      //3. get embeddings from mobilenet
-      let embeddings = await mobilenetModel.infer(imageTensor, true);
-      //4. train knn classifier
-      knnClassifierModel.addExample(embeddings,className)
+      let activation = await mobilenetModel.infer(imageTensor, true);
+      //console.log("[+] Activation Shape", activation.shape)
+      await dnnClassifierModel.fit(activation, tf.tensor([[1,0,0]]).reshape([-1,3]), {
+        epochs: 1,
+        batchSize: 1
+      })
+      knnClassifierModel.addExample(activation,className)
       let tempCountExamples = countExamples + 1
       let tempCountClassExamples = countClassExamples
       tempCountClassExamples[`${className}`] = tempCountClassExamples[`${className}`] +1 
@@ -89,28 +97,7 @@ export default function App() {
     }
     setIsLoading(false)
   } 
-  //5. predict new images
-  const getPredictions = async() =>{
-    if(this.camera){
-      console.log("[+] Analysing Photo")
-      setStatus(statusList[2])
-      setIsLoading(true)
-      let photo = await this.camera.takePictureAsync({
-        skipProcessing: true,
-      });
-      //resize images into width:224 height:224
-      image = await resizeImage(photo.uri, 224 , 224);
-      let imageTensor = base64ImageToTensor(image.base64);
-      //get embeddings from mobilenet
-      let embeddings = await mobilenetModel.infer(imageTensor,true)
-      //predict with knn classifier
-      let prediction = await knnClassifierModel.predictClass(embeddings);
-      console.log(JSON.stringify(prediction))
-      setPrediction(prediction)
-      setIsLoading(false)
-      console.log("[+] Photo Analysed")
-    }
-  }
+
   function base64ImageToTensor(base64){
     //Function to convert jpeg image to tensors
     const rawImageData = tf.util.encodeString(base64, 'base64');
@@ -143,7 +130,19 @@ export default function App() {
     const res = await ImageManipulator.manipulateAsync(imageUrl, actions, saveOptions);
     return res;
   }
+  /*function createDnnClassifierModel(){
+    const model = tf.sequential();
+    model.add(tf.layers.dense({inputShape: [1024], units: 128, activation: 'relu'}));
+    model.add(tf.layers.dense({ units: 64, activation: 'relu'}));
+    model.add(tf.layers.dense({units: 3, activation: 'softmax'}));
+    model.compile({
+      optimizer: 'adam',
+      loss: 'categoricalCrossentropy',
+      metrics: ['accuracy']
+    });
+    return model
 
+  }*/
   return (
     <View style={styles.container}>
       <Overlay isVisible={isLoading} fullScreen={true} overlayStyle={{alignItems: "center", justifyContent: 'center'}}>
@@ -157,16 +156,24 @@ export default function App() {
         <Card.Title style={{fontSize:16}}>Image Classification</Card.Title>
         <Card.Divider/>
         <View style={{flexDirection:"row"}}>
-          {classList.map((item, key) => {
-            return (
-              <View style={{flex:1,padding:5}} key={item.id}>
-                <Button 
-                  title={`${item.name} (${countClassExamples[item.name]})`}
-                  onPress={()=>{collectData(item.name)}}
-                />
-              </View>
-            );
-          })}
+          <View style={{flex:1,padding:5}}>
+            <Button 
+              title={`Class A (${countClassExamples["Class A"]})`}
+              onPress={()=>{collectData("Class A")}}
+            />
+          </View>
+          <View style={{flex:1,padding:5}}>
+            <Button 
+             title={`Class B (${countClassExamples["Class B"]})`}
+              onPress={()=>{collectData("Class B")}}
+            />
+          </View>
+          <View style={{flex:1,padding:5}}>
+            <Button 
+              title={`Class C (${countClassExamples["Class C"]})`}
+              onPress={()=>{collectData("Class C")}}
+            />
+          </View>
         </View>
       </Card>
       <View style={{width:224,height:224}}>

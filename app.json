@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ai-app",
-    "slug": "ai-app",
+    "name": "knn-image-classifier",
+    "slug": "knn-image-classifier",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
